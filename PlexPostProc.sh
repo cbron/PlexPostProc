@@ -36,7 +36,7 @@
 #
 #******************************************************************************
 
-TMPFOLDER="/mnt/Media/transcoding/tmp/"
+TMPFOLDER="/mnt/Media/transcoding/tmp"
 ENCODER="ffmpeg"  # Encoder to use:
                   # "ffmpeg" for FFMPEG [DEFAULT]
                   # "handbrake" for HandBrake
@@ -70,9 +70,9 @@ if [ ! -z "$1" ]; then
 
    TEMPFILENAME="$(mktemp).mkv"  # Temporary File Name for transcoding
 
-   LOCKFILE="$(mktemp).ppplock"  # [WORKAROUND] Temporary File for blocking simultaneous scripts from ending early
-   touch $LOCKFILE # Create the lock file
-   check_errs $? "Failed to create temporary lockfile: $LOCKFILE"
+   # LOCKFILE="$(mktemp).ppplock"  # [WORKAROUND] Temporary File for blocking simultaneous scripts from ending early
+   # touch $LOCKFILE # Create the lock file
+   # check_errs $? "Failed to create temporary lockfile: $LOCKFILE"
 
    LOGFILE="$TMPFOLDER/plexpp$(date +"%Y%m%d-%H%M%S").log" # Create a unique log file.
    touch $LOGFILE # Create the log file
@@ -91,7 +91,8 @@ if [ ! -z "$1" ]; then
    # ffmpeg -i "$FILENAME" -s hd$RES -c:v libx264 -preset veryfast -vf yadif -c:a copy "$TEMPFILENAME"
 
    # this only re-muxes
-   ffmpeg -i "$FILENAME" -c copy "$TEMPFILENAME"
+   echo "$FILENAME" "$TEMPFILENAME"
+   /usr/bin/ffmpeg -i "$FILENAME" -c copy "$TEMPFILENAME"
 
    check_errs $? "Failed to convert using FFMPEG."
 
@@ -107,21 +108,21 @@ if [ ! -z "$1" ]; then
    mv -f "$TEMPFILENAME" "${FILENAME%.ts}.mkv" # Move completed tempfile to .grab folder/filename
    check_errs $? "Failed to move converted file: $TEMPFILENAME"
 
-   rm -f "$LOCKFILE" # Delete the lockfile after completing
-   check_errs $? "Failed to remove lockfile."
+   # rm -f "$LOCKFILE" # Delete the lockfile after completing
+   # check_errs $? "Failed to remove lockfile."
 
-   # [WORKAROUND] Wait for any other post-processing scripts to complete before exiting.
-   while [ true ] ; do
-     if ls "$TMPFOLDER/"*".ppplock" 1> /dev/null 2>&1; then
-       echo "$(date +"%Y%m%d-%H%M%S"): Looks like there is another scripting running.  Waiting." | tee -a $LOGFILE
-       sleep 5
-     else
-       echo "$(date +"%Y%m%d-%H%M%S"): It looks like all scripts are done running, exiting." | tee -a $LOGFILE
-       break
-     fi
-   done
+   # # [WORKAROUND] Wait for any other post-processing scripts to complete before exiting.
+   # while [ true ] ; do
+   #   if ls "$TMPFOLDER/"*".ppplock" 1> /dev/null 2>&1; then
+   #     echo "$(date +"%Y%m%d-%H%M%S"): Looks like there is another scripting running.  Waiting." | tee -a $LOGFILE
+   #     sleep 5
+   #   else
+   #     echo "$(date +"%Y%m%d-%H%M%S"): It looks like all scripts are done running, exiting." | tee -a $LOGFILE
+   #     break
+   #   fi
+   # done
 
-   echo "$(date +"%Y%m%d-%H%M%S"): Encode done.  Exiting." | tee -a $LOGFILE
+   # echo "$(date +"%Y%m%d-%H%M%S"): Encode done.  Exiting." | tee -a $LOGFILE
 
 else
    echo "********************************************************" | tee -a $LOGFILE
@@ -130,4 +131,4 @@ else
    echo "********************************************************" | tee -a $LOGFILE
 fi
 
-rm -f "$TMPFOLDER/"*".ppplock"  # Make sure all lock files are removed, just in case there was an error somewhere in the script
+# rm -f "$TMPFOLDER/"*".ppplock"  # Make sure all lock files are removed, just in case there was an error somewhere in the script
